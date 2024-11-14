@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment variables
+client/.env
+server/.env
+.env
+
+# Log files
+*.log
+
+# System-specific files
+.DS_Store
+Thumbs.db
+
+# IDE-specific (VS Code)
+.vscode/
+
+# Database files
+*.sqlite3
+*.db
