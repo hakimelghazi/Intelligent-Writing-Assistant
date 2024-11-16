@@ -1,65 +1,156 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { Editor, EditorState, ContentState, Modifier } from "draft-js";
+import "draft-js/dist/Draft.css";
 
 function App() {
-  const [text, setText] = useState('');
-  const [suggestion, setSuggestion] = useState('');
+  const [editorState, setEditorState] = useState(EditorState.createEmpty()); // Draft.js editor state
+  const [suggestion, setSuggestion] = useState(""); // Autocomplete suggestion
+  const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(true); // Toggle for autocomplete
+  const [wordCount, setWordCount] = useState(0); // Word count
+  const [errors, setErrors] = useState([]); // Grammar errors
 
-  // Calculate word count
-  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  // Handle editor changes
+  const handleEditorChange = (newState) => {
+    setEditorState(newState);
 
-  const handleGrammarCheck = async () => {
+    const content = newState.getCurrentContent().getPlainText();
+    setWordCount(content.trim().split(/\s+/).filter(Boolean).length); // Update word count
+
+    if (isAutocompleteEnabled && content.trim()) {
+      fetchSuggestion(content);
+    } else {
+      setSuggestion(""); // Clear suggestion if autocomplete is disabled
+    }
+  };
+
+  // Fetch autocomplete suggestions
+  const fetchSuggestion = async (input) => {
     try {
-      const response = await fetch('http://localhost:5001/suggestions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch("http://localhost:5001/autocomplete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: input }),
+      });
+
+      const data = await response.json();
+      setSuggestion(data.suggestion || "");
+    } catch (error) {
+      console.error("Error fetching suggestion:", error);
+    }
+  };
+
+  // Handle accepting the suggestion
+  const handleAcceptSuggestion = () => {
+    const currentContent = editorState.getCurrentContent();
+    const selection = editorState.getSelection();
+
+    const newContent = Modifier.insertText(
+      currentContent,
+      selection,
+      suggestion
+    );
+
+    setEditorState(EditorState.push(editorState, newContent, "insert-characters"));
+    setSuggestion(""); // Clear suggestion
+  };
+
+  // Handle toggle for autocomplete
+  const handleToggleAutocomplete = () => {
+    setIsAutocompleteEnabled((prev) => !prev);
+    setSuggestion(""); // Clear any existing suggestions
+  };
+
+  // Grammar check placeholder (not yet fully functional)
+  const handleGrammarCheck = async () => {
+    const text = editorState.getCurrentContent().getPlainText();
+
+    try {
+      const response = await fetch("http://localhost:5001/check-grammar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
 
       const data = await response.json();
-      setSuggestion(data.suggestion);
+      const grammarErrors = data.matches.map((match) => ({
+        offset: match.offset,
+        length: match.length,
+        message: match.message,
+      }));
+
+      setErrors(grammarErrors); // Save errors for highlighting
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error checking grammar:", error);
     }
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-center mb-4 text-gray-800">
-          Grammar Check Assistant
-        </h1>
-        <textarea
-          className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows="5"
-          placeholder="Type your text here..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        ></textarea>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Writing Area */}
+      <div className="flex-grow p-6">
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">Smart Compose Assistant</h1>
+        <div className="relative w-full h-full border rounded-lg bg-white p-4 shadow-lg">
+          {/* Draft.js Editor */}
+          <Editor
+            editorState={editorState}
+            onChange={handleEditorChange}
+            placeholder="Start typing here..."
+          />
+          {/* Autocomplete suggestion */}
+          {suggestion && (
+            <div className="absolute bottom-0 left-0 text-gray-400 mt-2">
+              {suggestion}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <div className="w-80 p-6 bg-white border-l shadow-lg">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">Tools</h2>
+
+        {/* Enable Autocomplete */}
+        <div className="flex items-center justify-between mb-4">
+          <label className="text-gray-700 font-medium">Enable Autocomplete</label>
+          <input
+            type="checkbox"
+            checked={isAutocompleteEnabled}
+            onChange={handleToggleAutocomplete}
+            className="w-5 h-5"
+          />
+        </div>
+
+        {/* Word Count */}
+        <div className="mb-4">
+          <p className="text-gray-700 font-medium">Word Count</p>
+          <p className="text-gray-800 text-lg">{wordCount}</p>
+        </div>
+
+        {/* Grammar Check Button */}
         <button
-          className="w-full mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-200"
           onClick={handleGrammarCheck}
+          className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition duration-200"
         >
           Check Grammar
         </button>
-        {suggestion && (
-          <div className="mt-6">
-            <h2 className="text-lg font-medium text-gray-700">Suggestion:</h2>
-            <p className="mt-2 p-3 bg-gray-50 border rounded-lg text-gray-800">
-              {suggestion}
-            </p>
-          </div>
-        )}
-      </div>
 
-      {/* Word Count */}
-      <div className="absolute bottom-4 left-4 text-gray-600 text-sm">
-        Word Count: {wordCount}
+        {/* Accept Suggestion Button */}
+        {suggestion && (
+          <button
+            onClick={handleAcceptSuggestion}
+            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-200 mt-4"
+          >
+            Accept Suggestion
+          </button>
+        )}
+
+        {/* Placeholder for future features */}
+        <div className="mt-6">
+          <p className="text-gray-500 italic">More features coming soon...</p>
+        </div>
       </div>
     </div>
   );
 }
 
 export default App;
-

@@ -1,18 +1,63 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
 /* Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Styling for the writing area */
+textarea {
+  color: transparent; /* Make text invisible */
+  caret-color: black; /* Ensure caret is visible */
+  line-height: 1.5; /* Match line-height of overlay text */
+  font-size: 1rem; /* Match font size of overlay text */
+  font-family: inherit; /* Match font family of overlay text */
+  padding: 0; /* Remove padding to align exactly with overlay */
+  margin: 0; /* Remove margin */
+  white-space: pre-wrap; /* Preserve whitespace and wrapping */
+  word-wrap: break-word; /* Break words appropriately */
+  height: 100%; /* Ensure it fills its container */
+  resize: none; /* Disable resizing of textarea */
+  overflow: hidden; /* Prevent scrollbars */
+}
+
+.relative {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  line-height: 1.5; /* Match textarea and spans */
+}
+
+
+/* Overlay text for user input */
+.text-black {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: pre-wrap; /* Preserve whitespace and wrapping */
+  word-wrap: break-word; /* Break words appropriately */
+  z-index: 10; /* Ensure it appears on top of textarea */
+  line-height: 1.5; /* Match textarea's line-height */
+  font-size: 1rem; /* Match textarea's font size */
+
+}
+
+/* Overlay text for suggestions */
+.text-gray-400 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: pre-wrap; /* Preserve whitespace and wrapping */
+  word-wrap: break-word; /* Break words appropriately */
+  pointer-events: none; /* Disable interactions */
+  opacity: 0.7; /* Slight transparency */
+  z-index: 5; /* Ensure it appears below user input */
+  line-height: 1.5; /* Match textarea's line-height */
+  font-size: 1rem; /* Match textarea's font size */
+  font-family: inherit; /* Match textarea's font family */
+
+}
+
+/* Sidebar reset */
+.w-80 {
+  flex-shrink: 0;
+  overflow-y: auto;
+}
