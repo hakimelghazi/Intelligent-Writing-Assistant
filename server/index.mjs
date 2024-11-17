@@ -8,7 +8,7 @@ import axios from "axios";
 dotenv.config();
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Using the API key from .env file
+  apiKey: process.env.OPENAI_API_KEY, 
 });
 
 const app = express();
@@ -118,5 +118,74 @@ app.post("/autocomplete", async (req, res) => {
   } catch (error) {
     console.error("Error generating autocomplete suggestions:", error);
     res.status(500).json({ message: "Error generating suggestions" });
+  }
+});
+
+// Rewrite text route
+app.post("/rewrite", async (req, res) => {
+  const { text, tone } = req.body;
+
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: `You are a writing assistant. Rewrite the following text in the specified tone: ${tone}.`,
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
+    });
+
+    const rewritten = response.choices[0].message.content.trim();
+    res.json({ rewritten });
+  } catch (error) {
+    console.error("Error rewriting text:", error);
+    res.status(500).json({ message: "Error rewriting text" });
+  }
+});
+
+// Translation route
+app.post("/translate", async (req, res) => {
+  const { text, targetLanguage } = req.body;
+
+  if (!text || !targetLanguage) {
+    return res
+      .status(400)
+      .json({ error: "Both text and target language are required." });
+  }
+
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: `You are a translation assistant. Translate the following text to ${targetLanguage}. If the language is not recognized or supported, return "Unsupported language".`,
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 100,
+    });
+
+    const translation = response.choices[0].message.content.trim();
+
+    if (translation.toLowerCase().includes("unsupported language")) {
+      res.status(400).json({ error: "Unsupported language" });
+    } else {
+      res.json({ translation });
+    }
+  } catch (error) {
+    console.error("Error translating text:", error);
+    res.status(500).json({ error: "Error translating text" });
   }
 });

@@ -5,6 +5,10 @@ function App() {
   const [suggestion, setSuggestion] = useState(""); // Autocomplete suggestion
   const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(true); // Toggle for autocomplete
   const [errors, setErrors] = useState([]); // Grammar errors
+  const [selectedTone, setSelectedTone] = useState("Professional"); // Tone dropdown
+  const [rewrittenText, setRewrittenText] = useState(""); // Rewritten text
+  const [targetLanguage, setTargetLanguage] = useState(""); // User-specified language
+  const [translatedText, setTranslatedText] = useState(""); // Translation result
 
   // Toolbar state
   const [fontSize, setFontSize] = useState(16);
@@ -29,6 +33,32 @@ function App() {
       fetchSuggestion(userInput);
     } else {
       setSuggestion(""); // Clear suggestion if autocomplete is disabled
+    }
+  };
+
+  // Translator 
+  const handleTranslate = async () => {
+    if (!targetLanguage.trim()) {
+      alert("Please specify a target language.");
+      return;
+    }
+  
+    try {
+      const response = await fetch("http://localhost:5001/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, targetLanguage }),
+      });
+  
+      const data = await response.json();
+  
+      if (data.error) {
+        alert(`Error: ${data.error}`);
+      } else {
+        setTranslatedText(data.translation);
+      }
+    } catch (error) {
+      console.error("Error translating text:", error);
     }
   };
 
@@ -69,6 +99,22 @@ function App() {
       setErrors(grammarErrors);
     } catch (error) {
       console.error("Error checking grammar:", error);
+    }
+  };
+
+  // Handle text rewriting in a selected tone
+  const handleRewriteText = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/rewrite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, tone: selectedTone }),
+      });
+
+      const data = await response.json();
+      setRewrittenText(data.rewritten || "");
+    } catch (error) {
+      console.error("Error rewriting text:", error);
     }
   };
 
@@ -211,10 +257,67 @@ function App() {
             Check Grammar
           </button>
 
+          {/* Translation Section */}
+          <div className="mt-6">
+            <h3 className="text-gray-800 font-bold mb-2">Translate:</h3>
+            <input
+              type="text"
+              value={targetLanguage}
+              onChange={(e) => setTargetLanguage(e.target.value)}
+              placeholder="Enter target language (e.g., French)"
+              className="w-full p-2 border rounded mb-2"
+            />
+            <button
+              onClick={handleTranslate}
+              className="w-full bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition duration-200"
+            >
+              Translate
+            </button>
+            {translatedText && (
+              <div className="mt-4 p-2 border rounded bg-gray-100">
+                <h4 className="text-gray-700 font-semibold mb-1">Translation:</h4>
+                <p className="text-gray-800">{translatedText}</p>
+              </div>
+            )}
+          </div>
+
+
+          {/* Tone Rewrite */}
+          <div className="mb-4">
+            <label className="text-gray-700 font-medium mb-2 block">Rewrite Tone</label>
+            <select
+              value={selectedTone}
+              onChange={(e) => setSelectedTone(e.target.value)}
+              className="w-full border-gray-300 rounded-md"
+            >
+              <option value="Professional">Professional</option>
+              <option value="Relaxed">Relaxed</option>
+              <option value="Cool">Cool</option>
+              <option value="Shakespeare">Shakespeare</option>
+              <option value="Gordon Ramsay">Gordon Ramsay</option>
+              <option value="Angelic">Angelic</option>
+            </select>
+          </div>
+          <button
+            onClick={handleRewriteText}
+            className="w-full bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition duration-200"
+          >
+            Rewrite Text
+          </button>
+
+          {/* Rewritten Text Display */}
+          {rewrittenText && (
+            <div className="mt-6 bg-gray-100 p-4 rounded-md border">
+              <h3 className="text-gray-800 font-bold mb-2">Rewritten Text:</h3>
+              <p className="text-gray-700">{rewrittenText}</p>
+            </div>
+          )}
+
+          
           {/* Grammar Feedback */}
-          {errors.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-gray-800 font-bold mb-2">Grammar Feedback:</h3>
+          <div className="mt-6">
+            <h3 className="text-gray-800 font-bold mb-2">Grammar Feedback:</h3>
+            {errors.length > 0 ? (
               <ul className="space-y-2">
                 {errors.map((error, index) => (
                   <li key={index} className="text-sm text-gray-700">
@@ -230,8 +333,13 @@ function App() {
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-green-600 italic">
+                No grammar mistakes found.
+              </p>
+            )}
+          </div>
+
 
           {/* Accept Suggestion Button */}
           {suggestion && (
@@ -249,4 +357,3 @@ function App() {
 }
 
 export default App;
-
