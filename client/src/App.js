@@ -239,7 +239,7 @@ function App() {
               onClick={() => setText((prev) => prev + suggestion)}
               className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-200 mt-4"
             >
-              Accept Suggestion
+              Accept Suggestions
             </button>
           )}
         </div>
