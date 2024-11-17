@@ -27,28 +27,33 @@ app.listen(port, () => {
 });
 
 // Grammar check route
+import qs from "qs"; // Import querystring library to handle form-urlencoded data
+
+// Grammar check route
 app.post("/check-grammar", async (req, res) => {
   const { text } = req.body;
+
+  console.log("Received text for grammar check:", text); // Log incoming text
+
   try {
     const response = await axios.post(
       "https://api.languagetoolplus.com/v2/check",
-      {
-        text: text,
-        language: "en-US",
-      },
+      qs.stringify({ text, language: "en-US" }), // Use querystring to format the payload
       {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded", // Set the correct content type
         },
       }
     );
-    console.log("Grammar Check Response:", response.data); // Debugging
+
+    console.log("LanguageTool API response:", response.data); // Log full API response
     res.json(response.data);
   } catch (error) {
-    console.error("Error checking grammar:", error);
-    res.status(500).json({ message: "Error checking grammar" });
+    console.error("Error in LanguageTool API call:", error.response?.data || error.message); // Detailed error log
+    res.status(500).json({ message: "Error checking grammar", error: error.response?.data || error.message });
   }
 });
+
 
 
 // Suggestions route using OpenAI API
