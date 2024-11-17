@@ -115,7 +115,7 @@ function App() {
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* Header Section */}
       <div className="flex items-center justify-between px-6 py-4 bg-white shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800">Smart Compose Assistant</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Intelligent Writing Assistant</h1>
         <div className="flex items-center space-x-4">
           <select
             value={fontFamily}
